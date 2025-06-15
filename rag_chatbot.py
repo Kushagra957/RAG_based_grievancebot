@@ -2,6 +2,7 @@ import google.generativeai as genai
 import re
 from typing import Dict, List, Optional, Tuple
 from dbmanager import DatabaseManager
+import os
 
 class GrievanceChatbot:
     def __init__(self, api_key: str, db_path: str = "grievance_system.db"):
@@ -200,7 +201,8 @@ Provide a helpful response based on the context and your role as a grievance man
 # Example usage and testing
 if __name__ == "__main__":
     # Initialize chatbot (you'll need to provide your Gemini API key)
-    API_KEY = "your-gemini-api-key-here"
+    # API_KEY = "your-gemini-api-key-here"
+    API_KEY = os.getenv('GEMINI_API_KEY')
     chatbot = GrievanceChatbot(API_KEY)
     
     # Test conversation

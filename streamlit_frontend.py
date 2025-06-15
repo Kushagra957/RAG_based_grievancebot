@@ -249,24 +249,7 @@ with col2:
                 """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # # Chat input
-    # st.markdown("---")
-    
-    # # Create input form
-    # with st.form(key='chat_form', clear_on_submit=True):
-    #     col_input, col_send = st.columns([5, 1])
-        
-    #     with col_input:
-    #         user_input = st.text_input(
-    #             "Type your message:",
-    #             placeholder="E.g., I have issues with my laptop. Register a complaint for me.",
-    #             label_visibility="collapsed"
-    #         )
-        
-    #     with col_send:
-    #         send_button = st.form_submit_button("Send 📤", use_container_width=True)
-     
+
     # Chat input
     st.markdown("---")
 
