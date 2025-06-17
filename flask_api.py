@@ -42,17 +42,17 @@ def chat():
     """Handle chat messages"""
     try:
         data = request.json
-        message = data.get('message', '').strip()
+        # Allow message to be empty for initial session setup.
+        # The chatbot's process_message function is designed to handle this.
+        message = data.get('message', '').strip() 
         session_id = data.get('session_id')
-        
-        if not message:
-            return jsonify({'error': 'Message is required'}), 400
         
         # Generate session ID if not provided
         if not session_id:
             session_id = str(uuid.uuid4())
         
-        # Process message
+        # Process message using the chatbot
+        # The chatbot itself handles validation of message content based on the state
         response, is_registered = chatbot.process_message(session_id, message)
         
         return jsonify({
@@ -63,6 +63,8 @@ def chat():
         })
     
     except Exception as e:
+        # Log the full exception for debugging in production
+        print(f"Error in /api/chat: {e}") 
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
 @app.route('/api/complaint/register', methods=['POST'])
@@ -92,6 +94,7 @@ def register_complaint():
         })
     
     except Exception as e:
+        print(f"Error in /api/complaint/register: {e}")
         return jsonify({'error': f'Failed to register complaint: {str(e)}'}), 500
 
 @app.route('/api/complaint/status/<complaint_id>', methods=['GET'])
@@ -109,6 +112,7 @@ def get_complaint_status(complaint_id):
         })
     
     except Exception as e:
+        print(f"Error in /api/complaint/status/<id>: {e}")
         return jsonify({'error': f'Failed to retrieve status: {str(e)}'}), 500
 
 @app.route('/api/complaint/status', methods=['POST'])
@@ -132,6 +136,7 @@ def get_complaint_status_by_mobile():
         })
     
     except Exception as e:
+        print(f"Error in /api/complaint/status (POST): {e}")
         return jsonify({'error': f'Failed to retrieve status: {str(e)}'}), 500
 
 @app.route('/api/health', methods=['GET'])
@@ -155,3 +160,4 @@ if __name__ == '__main__':
     print("- GET /api/health - Health check")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
+

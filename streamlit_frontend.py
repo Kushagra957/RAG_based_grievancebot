@@ -89,19 +89,8 @@ st.markdown("""
 if 'messages' not in st.session_state:
     st.session_state.messages = []
     st.session_state.session_id = str(uuid.uuid4())
-    # Add welcome message
-    welcome_msg = {
-        'content': """Hello! I'm your grievance management assistant. I can help you:
-
-• Register a new complaint
-• Check the status of existing complaints  
-• Answer questions about the grievance process
-
-How can I assist you today?""",
-        'is_user': False,
-        'timestamp': datetime.now()
-    }
-    st.session_state.messages.append(welcome_msg)
+    # The initial welcome message will be fetched from the chatbot's process_message
+    # when the Streamlit app first loads.
 
 if 'api_status' not in st.session_state:
     st.session_state.api_status = None
@@ -129,7 +118,7 @@ def send_message_to_api(message, session_id):
         if response.status_code == 200:
             return response.json()
         else:
-            return {'error': f'API Error: {response.status_code}'}
+            return {'error': f'API Error: {response.status_code}: {response.text}'}
     except requests.exceptions.ConnectionError:
         return {'error': 'Cannot connect to API. Please ensure the Flask server is running on localhost:5000'}
     except requests.exceptions.Timeout:
@@ -144,7 +133,7 @@ def get_complaint_status(complaint_id):
         if response.status_code == 200:
             return response.json()
         else:
-            return {'error': f'API Error: {response.status_code}'}
+            return {'error': f'API Error: {response.status_code}: {response.text}'}
     except Exception as e:
         return {'error': f'Error: {str(e)}'}
 
@@ -219,7 +208,9 @@ with st.sidebar:
     if st.button("🔄 Clear Chat"):
         st.session_state.messages = []
         st.session_state.session_id = str(uuid.uuid4())
-        st.rerun()
+        # To trigger the initial welcome message from the bot, send an empty message after clearing
+        # This will now work correctly with the updated Flask API
+        st.experimental_rerun()
 
 # Main chat area
 col1, col2, col3 = st.columns([1, 6, 1])
@@ -230,6 +221,20 @@ with col2:
     # Display chat messages
     chat_container = st.container()
     with chat_container:
+        # If no messages and API is online, send an empty message to trigger the bot's initial greeting
+        if not st.session_state.messages and st.session_state.api_status:
+            with st.spinner('🤖 Initializing chat...'):
+                response = send_message_to_api("", st.session_state.session_id)
+                if 'error' not in response:
+                    bot_msg = {
+                        'content': response['response'],
+                        'is_user': False,
+                        'timestamp': datetime.now()
+                    }
+                    st.session_state.messages.append(bot_msg)
+                else:
+                    st.error(f"Error initializing chat: {response['error']}")
+        
         for i, message in enumerate(st.session_state.messages):
             timestamp = message['timestamp'].strftime("%H:%M")
             
@@ -272,20 +277,12 @@ with col2:
 
     # Create input form without columns
     with st.form(key='chat_form', clear_on_submit=True):
-        # Use a single input with the button integrated
         user_input = st.text_input(
             "Type your message:",
-            placeholder="E.g., I have issues with my laptop. Register a complaint for me.",
-            # label_visibility="collapsed"
+            placeholder="E.g., Register new complaint or check status",
         )
         
-        # Center the button or use full width
-        # send_button = st.form_submit_button("Send 📤", use_container_width=True)
         send_button = st.form_submit_button("Send 📤")
-    
-    
-    
-    
     
     # Process message when form is submitted
     if send_button and user_input:
@@ -319,14 +316,12 @@ with col2:
                     'timestamp': datetime.now()
                 }
                 
-                # Update session ID if provided
+                # Update session ID if provided (this is handled by Flask API's chat endpoint)
                 if 'session_id' in response:
                     st.session_state.session_id = response['session_id']
             
             st.session_state.messages.append(bot_msg)
             
-            # Rerun to update the display
-            # st.rerun()
             st.experimental_rerun()
 
 
@@ -342,5 +337,4 @@ st.markdown("""
 # Auto-refresh API status every 30 seconds
 if st.session_state.api_status is False:
     time.sleep(5)  # Wait 5 seconds before checking again
-    # st.rerun()
     st.experimental_rerun()
